@@ -219,6 +219,27 @@ def test_guard_blocks_non_template_env_example(monkeypatch):
                            {"secrets/creds.env.example": "nothing secret here"}) == 1
 
 
+def test_guard_exempts_env_assignments_under_tests(monkeypatch):
+    # Test fixtures legitimately contain fake env values (e.g. GMAIL_APP_PASSWORD="globalpw"). Under
+    # tests/, env-var ASSIGNMENTS are not treated as leaks, so the suite can commit its own fixtures.
+    fixture = "GMAIL_APP_" + 'PASSWORD="globalpw"'
+    assert _run_guard_main(monkeypatch, ["tests/test_config_axes.py"],
+                           {"tests/test_config_axes.py": fixture}) == 0
+    assert _run_guard_main(monkeypatch, ["nested/tests/test_x.py"],
+                           {"nested/tests/test_x.py": fixture}) == 0
+    # ...but the same assignment OUTSIDE tests/ is still blocked.
+    assert _run_guard_main(monkeypatch, ["cagent/config.py"],
+                           {"cagent/config.py": fixture}) == 1
+
+
+def test_guard_still_flags_key_material_under_tests(monkeypatch):
+    # Raw key MATERIAL is never a legitimate fixture: a private key / sk- token is blocked even
+    # under tests/, and a live configured COMMAND_TOKEN appearing raw is caught everywhere too.
+    key = "sk-" + "A" * 24
+    assert _run_guard_main(monkeypatch, ["tests/test_thing.py"],
+                           {"tests/test_thing.py": key}) == 1
+
+
 def test_guard_diff_filter_includes_renames():
     # The rename (R) status must be in the diff filter, else a rename-plus-edit that introduces a
     # secret is never content-scanned. We assert the argv rather than run git.

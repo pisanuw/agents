@@ -8,7 +8,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-PATTERNS = [
+# Env-var ASSIGNMENTS that look like a real .env value. The test suite legitimately contains fake
+# ones (a fixture app-password / token value), so main() skips these for files under tests/;
+# everywhere else a KEY=VALUE assignment is treated as a leak.
+ENV_ASSIGN_PATTERNS = [
     # Any non-blank value, even the grouped display form ("abcd efgh ijkl mnop") whose spaces the old
     # base64 pattern let slip past. Requires the value to START with an alnum (optionally quoted), so
     # the blank template (`GMAIL_APP_PASSWORD=`) and the `=   # 16-char...` doc placeholder are ignored.
@@ -16,12 +19,18 @@ PATTERNS = [
     # COMMAND_TOKEN carries an arbitrary value; catch the env-var assignment form to avoid
     # false-positives on the many legitimate references to the variable name in code/tests/docs.
     re.compile(r"COMMAND_TOKEN\s*=\s*[\"']?[A-Za-z0-9!@#$%^&*_\-]{6,}"),
+]
+# Raw key MATERIAL: never legitimate in ANY file, tests included. Always scanned. (A live configured
+# COMMAND_TOKEN appearing raw is likewise caught everywhere, via _leaked_tokens in main().)
+KEY_MATERIAL_PATTERNS = [
     re.compile(r"\bsk-[A-Za-z0-9]{20,}"),
     re.compile(r"\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),   # JWT
     re.compile(r"\bre_[A-Za-z0-9]{16,}"),                          # resend-style (legacy)
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     re.compile(r"\bAKIA[0-9A-Z]{16}\b"),                          # AWS access key
 ]
+# Full set, in original order. Kept as one list for callers that scan a single string (unit tests).
+PATTERNS = ENV_ASSIGN_PATTERNS + KEY_MATERIAL_PATTERNS
 # `.env` and any per-persona/local overlay beside it (`.env-mailbox-1`, `.env-scout`, `.env.local`);
 # `.env.example` matches too but the EXACT template path is allowed in main() (any other .env.example
 # stays blocked). Overlays are gitignored, but this guard is the backstop for a `git add -f` that
@@ -103,7 +112,11 @@ def main() -> int:
         # NOTE: the template is NOT skipped from the content scan below -- its values are blank so the
         # PATTERNS never fire, but a real password accidentally pasted into it WILL be caught.
         content = staged_content(f)
-        for pat in PATTERNS:
+        # Under tests/, env-var ASSIGNMENTS are fixtures (fake passwords/tokens), so scan only for raw
+        # key MATERIAL there; everywhere else scan the full set. Real keys and a live COMMAND_TOKEN
+        # (below) are still caught in tests.
+        is_test = f.startswith("tests/") or "/tests/" in f
+        for pat in (KEY_MATERIAL_PATTERNS if is_test else PATTERNS):
             if pat.search(content):
                 bad.append(f"secret pattern in {f}: /{pat.pattern}/")
         # A live COMMAND_TOKEN must never land in git raw -- received mail is the usual vector (sealed
