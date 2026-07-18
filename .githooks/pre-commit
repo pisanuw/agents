@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Pre-commit gate: secret scanning (deterministic guard + gitleaks) then a ruff lint of the STAGED
+# Python files -- mirroring the CI `ruff check .` gate at commit time so a lint regression is caught
+# before it lands on main (where nothing else blocks a red CI). Scoped to staged .py only, so the
+# dispatcher's "cagent tick:" commits (which stage state/ + logs/, no .py) are never linted or gated.
+set -uo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+
+# Layer 1: deterministic guard (authoritative; always present).
+python3 "$ROOT/.githooks/secret_guard.py" || exit 1
+
+# Layer 2: gitleaks on staged changes (defense in depth). Layer 1 still runs without it, so this
+# warns (not blocks) when gitleaks is absent, so the operator knows defense-in-depth is off.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --no-banner --redact "$ROOT" || {
+    echo "gitleaks flagged staged content; commit aborted." >&2
+    exit 1
+  }
+else
+  echo "pre-commit: warning -- gitleaks not installed; only the deterministic guard ran (no entropy scan)." >&2
+fi
+
+# Layer 3: ruff lint of the STAGED Python files only. Skipped entirely when this commit stages no
+# .py (the fast path for tick commits, so the live dispatcher is never gated). Warns (does not block)
+# when ruff is absent, like gitleaks -- a fresh clone without the dev extras can still commit, and CI
+# is the authoritative gate. Prefers the project venv's ruff, falls back to one on PATH.
+PY_STAGED="$(git diff --cached --name-only --diff-filter=ACMR -- '*.py')"
+if [ -n "$PY_STAGED" ]; then
+  RUFF="$ROOT/.venv/bin/ruff"
+  [ -x "$RUFF" ] || RUFF="$(command -v ruff || true)"
+  if [ -n "$RUFF" ]; then
+    # NUL-delimited so paths with spaces survive; xargs only runs because PY_STAGED is non-empty
+    # (an empty list would make `ruff check` with no args lint the whole tree -- guarded against).
+    git diff --cached --name-only --diff-filter=ACMR -z -- '*.py' | xargs -0 "$RUFF" check || {
+      echo "ruff flagged staged Python; commit aborted (fix, or run 'ruff check --fix')." >&2
+      exit 1
+    }
+  else
+    echo "pre-commit: warning -- ruff not found; staged Python not linted locally (CI still gates it)." >&2
+  fi
+fi
+exit 0

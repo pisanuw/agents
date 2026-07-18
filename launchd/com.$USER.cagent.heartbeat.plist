@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.$USER.cagent.heartbeat</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$REPO/bin/heartbeat.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Minute</key>
+      <integer>7</integer>
+    </dict>
+    <dict>
+      <key>Minute</key>
+      <integer>37</integer>
+    </dict>
+  </array>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>WorkingDirectory</key>
+  <string>$REPO</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AGENT_MODE</key>
+    <string>SUPERVISED</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>$REPO/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>$REPO/logs/launchd.err.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

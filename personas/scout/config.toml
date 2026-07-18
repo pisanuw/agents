@@ -1,0 +1,15 @@
+# Scout -- a plain, professional research assistant. The simplest example persona:
+# copy this whole directory to personas/<your-name>/ and edit it as a starting point.
+#
+# Identity + per-persona NON-secret overrides only. Scout has no `mailbox`/`owner` overlay,
+# so it uses the GLOBAL account + owner from ~/.config/cagent/.env. To give a persona its own
+# sending account or its own owner, set `mailbox = "<id>"` / `owner = "<id>"` here and create
+# the matching ~/.config/cagent/.env-<id> overlay (see cagent/.env.example and docs/PERSONAS.md).
+[agent]
+display_name = "Scout"     # From: display name on outbound mail
+plus_tag = "scout"         # inbound routing tag: replies to <account>+scout@ come back to this persona
+mode = "DRY_RUN"           # DRY_RUN | SUPERVISED | LIVE  (overrides the global default per-persona)
+
+# A persona may override any global cap/cadence key here, e.g.:
+# [caps]
+# emails_per_day = 1

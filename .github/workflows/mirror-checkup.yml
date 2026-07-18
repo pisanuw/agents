@@ -1,0 +1,61 @@
+name: Mirror Checkup
+
+# Manual-ONLY dashboard run: the read-only cross-persona summaries that mirror-checkup.sh prints
+# locally, on demand from the Actions "Run workflow" button. workflow_dispatch is the sole trigger,
+# so this never fires on push / pull_request / schedule -- it is a report you ask for, not a gate.
+#
+# It reproduces the *dashboard* half of mirror-checkup.sh (recent-all / sent-all / gate-blocks /
+# usage-all / readiness). The git-pull + is-this-the-mirror ceremony is deliberately omitted: that
+# logic only decides whether a LOCAL clone should pull, and CI already checks out the latest main.
+# Every dashboard is read-only (no claude call, no network, no secrets -- personas are SUPERVISED so
+# config.load() falls back to defaults when ~/.config/cagent/.env is absent), so it runs hermetically
+# against the committed state the live host pushes.
+on:
+  workflow_dispatch:
+    inputs:
+      ticks:
+        description: 'How many recent ticks to show (a number, or "all")'
+        required: false
+        default: '30'
+
+permissions:
+  contents: read
+
+jobs:
+  checkup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install (runtime only)
+        # Runtime deps only (no dev extra): the dashboards import `cagent` + jsonschema, never pytest.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Mirror checkup dashboards
+        env:
+          TICKS: ${{ inputs.ticks }}
+        # +e so one dashboard erroring never hides the rest; each section's output goes to BOTH the
+        # step log and the job summary (fenced) so the report is readable from the run's summary page.
+        run: |
+          set +e
+          section() {
+            local title="$1"; shift
+            echo ""
+            echo "=== ${title} ==="
+            printf '### %s\n```\n' "$title" >> "$GITHUB_STEP_SUMMARY"
+            "$@" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+            printf '```\n' >> "$GITHUB_STEP_SUMMARY"
+            date >> "$GITHUB_STEP_SUMMARY"
+          }
+          echo "# Mirror checkup" >> "$GITHUB_STEP_SUMMARY"
+          section "recent activity" ./bin/recent-all.sh "$TICKS"
+          section "sent mail"       ./bin/sent-all.sh
+          section "gate blocks"     ./bin/gate-blocks.sh
+          section "usage"           ./bin/usage-all.sh
+          section "goals"           ./bin/goals-all.sh
+          section "readiness"       ./bin/readiness.sh

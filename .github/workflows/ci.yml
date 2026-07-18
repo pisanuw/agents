@@ -1,0 +1,87 @@
+name: CI
+
+# Run ruff + pytest on every change to CODE/config/tests. Deliberately path-filtered so the
+# dispatcher's constant "cagent tick: <persona>" commits (which only touch state/ and logs/) do NOT
+# trigger a run -- CI fires when it can actually catch a regression, not on every heartbeat.
+on:
+  push:
+    # NOTE: personas/** is intentionally absent here (though present on pull_request below).
+    # persona-state.json under personas/<name>/ drifts on every reflection/arc-step, so a large
+    # fraction of the dispatcher's direct-to-main "cagent tick:" commits touch it -- gating those on
+    # CI would fire a full multi-Python run on ordinary heartbeats. A human PR that edits a persona's
+    # config.toml / gate-check IS gated via the pull_request trigger. prompts/** and bin/** are
+    # static (no tick churn), so they are safe to gate on push.
+    paths:
+      - 'cagent/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'config.toml'
+      - '.githooks/**'
+      - '.github/workflows/ci.yml'
+      - 'prompts/**'
+      - 'bin/**'
+      - 'persona/**'
+      - 'mirror-checkup.sh'
+  pull_request:
+    paths:
+      - 'cagent/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'config.toml'
+      - '.githooks/**'
+      - '.github/workflows/ci.yml'
+      - 'prompts/**'
+      - 'personas/**'
+      - 'persona/**'
+      - 'bin/**'
+      - 'mirror-checkup.sh'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cover the full supported range (requires-python = ">=3.11").
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install (runtime + dev extras)
+        # ruff is pinned via the dev extra now (no ad-hoc unversioned install that could break the
+        # gate on a new ruff release).
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Typecheck (mypy, advisory)
+        # Non-blocking until the codebase carries type annotations; surfaces real type mistakes
+        # without failing the build on the existing untyped stdlib-heavy code. See [tool.mypy].
+        continue-on-error: true
+        run: mypy cagent/
+      - name: CLI smoke (cagentctl -h)
+        # Cheap guard that the operator CLI still imports and its arg table is intact. The full
+        # `doctor` needs live claude auth, so it cannot run in CI.
+        run: ./bin/cagentctl -h
+      - name: Test (pytest)
+        # The suite stubs every external dependency (claude CLI, Gmail) and config defaults when
+        # ~/.config/cagent/.env is absent, so it runs hermetically with no secrets.
+        run: pytest -q
+
+  secrets:
+    # Server-side backstop for the local .githooks secret guards (which only run for clones that ran
+    # `git config core.hooksPath .githooks`). Independent of the Python matrix.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0            # full history so gitleaks scans the whole tree, not just the tip
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["body"],
+  "properties": {
+    "subject": { "type": "string" },
+    "body": { "type": "string" }
+  }
+}

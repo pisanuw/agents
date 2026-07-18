@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "findings", "new_questions"],
+  "properties": {
+    "query": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "source_url"],
+        "properties": {
+          "claim": { "type": "string" },
+          "source_title": { "type": "string" },
+          "source_url": { "type": "string" },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "dead_ends": { "type": "array", "items": { "type": "string" } },
+    "new_questions": { "type": "array", "items": { "type": "string" } }
+  }
+}

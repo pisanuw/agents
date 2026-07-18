@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "arc_stage": "idealism",
+  "arc_stage_since": "2026-01-01T00:00:00",
+  "heartbeats_in_stage": 0,
+  "tone_temperature": 0.7,
+  "quests_completed": 0,
+  "hard_problems_named": 0,
+  "victories": 0,
+  "tribulations": 0,
+  "recurring_motifs": [],
+  "last_self_reflection": null
+}

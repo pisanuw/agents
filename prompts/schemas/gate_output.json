@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "disclosure_present"],
+  "properties": {
+    "fabrication": { "type": "array", "items": { "type": "string" } },
+    "metaphor_leak": { "type": "array", "items": { "type": "string" } },
+    "false_victory": { "type": "array", "items": { "type": "string" } },
+    "hidden_failure": { "type": "array", "items": { "type": "string" } },
+    "safety": { "type": "array", "items": { "type": "string" } },
+    "disclosure_present": { "type": "boolean" },
+    "verdict": { "enum": ["send", "revise"] }
+  }
+}

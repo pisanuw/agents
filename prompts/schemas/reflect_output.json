@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary_of_progress", "new_goals", "headline_question"],
+  "properties": {
+    "summary_of_progress": { "type": "string", "maxLength": 1200 },
+    "goals_to_retire": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "why"],
+        "properties": { "id": { "type": "string" }, "why": { "type": "string" } }
+      }
+    },
+    "goals_to_keep": { "type": "array", "items": { "type": "string" } },
+    "new_goals": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "rationale"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "rationale": { "type": "string" },
+          "priority": { "type": "integer" }
+        }
+      }
+    },
+    "headline_question": { "type": "string" }
+  }
+}

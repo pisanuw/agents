@@ -1,0 +1,28 @@
+# secrets never live in the repo (the real .env is at ~/.config/cagent/.env)
+*.env
+.env
+.env-*
+**/credentials*
+*.key
+*.pem
+
+# runtime scratch + mutable agent state (created on first run; not part of the repo)
+var/
+state/
+prompts/rendered/
+*.tmp
+
+# logs/ IS tracked (committed each push) for remote monitoring; ignore only rotated archives
+logs/*.gz
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# os
+.DS_Store
+this-is-the-mirror.md

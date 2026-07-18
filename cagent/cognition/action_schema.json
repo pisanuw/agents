@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "actions"],
+  "properties": {
+    "summary": { "type": "string", "maxLength": 600 },
+    "mood": { "type": "string", "maxLength": 160 },
+    "actions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type"],
+        "properties": {
+          "type": { "enum": ["research", "write_note", "update_goals", "send_email", "schedule_reflection", "noop"] },
+          "reason": { "type": "string", "maxLength": 300 },
+          "research": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "query": { "type": "string" },
+              "goal_id": { "type": "string" }
+            }
+          },
+          "note": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": { "type": "string" },
+              "body": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } },
+              "goal_id": { "type": "string" }
+            }
+          },
+          "email": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "subject": { "type": "string" },
+              "body": { "type": "string" },
+              "kind": { "enum": ["finding", "question", "digest"] }
+            }
+          },
+          "update_goals": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "upsert": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": { "type": "string" },
+                    "title": { "type": "string" },
+                    "description": { "type": "string" },
+                    "priority": { "type": "integer" },
+                    "status": { "enum": ["active", "dormant"] }
+                  }
+                }
+              },
+              "retire": { "type": "array", "items": { "type": "string" } },
+              "rationale": { "type": "string" }
+            }
+          },
+          "schedule_reflection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "when": { "enum": ["next_tick", "daily", "weekly"] },
+              "focus": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

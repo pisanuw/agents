@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Last line before code leaves the machine: scan full history for secrets.
+set -uo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+
+# gitleaks does the full-history scan and is the only tool here that does it. FAIL CLOSED when it is
+# missing, rather than silently allowing the push (the old behaviour: this hook was a complete no-op
+# without gitleaks installed, leaving pushes from a fresh clone unscanned).
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-push: gitleaks is NOT installed, so the full-history secret scan cannot run." >&2
+  echo "Install it (e.g. 'brew install gitleaks') or this push is blocked." >&2
+  exit 1
+fi
+gitleaks git --no-banner --redact "$ROOT" || {
+  echo "gitleaks found secrets in history; push aborted. Rotate the credential and scrub history." >&2
+  exit 1
+}
+exit 0

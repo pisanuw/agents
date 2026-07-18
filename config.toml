@@ -1,0 +1,51 @@
+# cagent tunables (NON-secret). Secrets live in ~/.config/cagent/.env
+# AGENT_MODE env var overrides [agent].mode at runtime.
+
+# Multi-persona registry. The dispatcher round-robins `enabled` (in order); only those run.
+# Each name maps to personas/<name>/config.toml (identity + overrides) and persona.md (voice).
+# Any persona directory under personas/ that is NOT listed here exists as a draft but never ticks.
+#
+# Two example personas ship with this repo:
+#   scout  -- a plain, professional research assistant (easiest to copy as a starting point)
+#   pharos -- a characterful lighthouse-keeper voice (shows off the persona/voice system)
+# Copy either directory to personas/<your-name>/, edit its config.toml + persona.md, then add
+# the name here. See docs/PERSONAS.md.
+[personas]
+enabled = ["scout", "pharos"]
+default = "scout"        # untagged inbound mail routes here
+
+# [agent]/[caps]/[reflection]/[cognition] below are the GLOBAL DEFAULTS; a persona's own
+# config.toml overrides any key per-persona.
+[agent]
+mode = "DRY_RUN"          # DRY_RUN | SUPERVISED | LIVE
+model_tick = "sonnet"     # alias, survives model migrations
+model_reflect = "opus"    # deep reflection ticks only
+
+[caps]
+# These caps count CONTENT sends only (findings/digests/reflections). Supervision & operational mail
+# -- approval requests/reminders/backlog, command replies (status/ack/help/ping/goals), safety alerts
+# -- is exempt (gmail.CAP_EXEMPT_KINDS): it never consumes or is blocked by these caps, so approvals
+# and acks can't be starved by content volume (or vice-versa). !STOP-SENDING/!QUIET still halt all.
+emails_per_day = 3        # PER-PERSONA sub-cap (one persona can override in its own config)
+emails_per_week = 10      # PER-PERSONA sub-cap
+global_emails_per_day = 6    # GLOBAL ceiling across ALL personas (anti-flood; not persona-overridable).
+global_emails_per_week = 20  # GLOBAL ceiling across ALL personas. Raise as you add personas.
+research_per_tick = 1
+research_per_day = 6
+# Outbound backpressure: once this many LIVE drafts wait in pending/ (approved-but-unsent
+# behind the send cap + drafts awaiting approval), the tick stops admitting new send_email drafts
+# (execute._do_email refuses before the gate-check) and the context tells the model to also stop
+# researching until the queue drains. Defaults to 2 x emails_per_day if unset; per-persona overridable.
+max_backlog_drafts = 6
+
+[reflection]
+light_hours = 8           # light reflection: goals re-evaluated ~3x/day
+deep_hours = 72           # deep reflection: deep goal-evolution every 3 days
+
+[cognition]
+context_byte_cap = 49152  # ~48 KB tick context ceiling
+memory_notes = 8          # summaries selected into context
+tick_timeout_s = 500      # wall-clock kill for a claude call
+
+[commands]
+acknowledge = true        # email a one-line "applied: !PAUSE" / "refused: ..." confirmation back

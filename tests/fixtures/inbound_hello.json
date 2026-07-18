@@ -1,0 +1,14 @@
+{
+  "uid": "fix-hello",
+  "message_id": "<hello-fixture-001@gmail.com>",
+  "from": "Example Owner <owner@example.com>",
+  "to": "agent@example.com",
+  "subject": "How's the research going?",
+  "date": "Mon, 22 Jun 2026 14:00:00 -0700",
+  "in_reply_to": "",
+  "references": "",
+  "auto_submitted": "",
+  "precedence": "",
+  "body_text": "Tell me: what are you working on this week, and what have you actually found? Keep it short.",
+  "received_at": "2026-06-22T21:00:00+00:00"
+}

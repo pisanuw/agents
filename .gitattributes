@@ -1,0 +1,5 @@
+# Tracked runtime logs are append-only and written independently on the live host and any mirror,
+# so a plain reconcile always conflicts on them. The built-in `union` merge driver keeps BOTH sides'
+# lines automatically instead of raising a conflict (order isn't meaningful for these logs, and
+# gitpush._cap_tracked_logs truncates them to 500 lines on the next push anyway).
+logs/*.log merge=union

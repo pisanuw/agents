@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cagent"
+version = "0.0.0"
+description = "Autonomous self-evolving multi-persona research/writer agent on the local claude CLI"
+license = { text = "MIT" }   # matches the repo LICENSE file
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4",
+]
+
+[project.optional-dependencies]
+# ruff is pinned (was an ad-hoc unversioned `pip install ruff` in CI, which could break the lint
+# gate on any new ruff release and silently disagree with local runs). mypy is advisory-only in CI.
+dev = ["pytest>=8", "ruff==0.15.*", "mypy>=1.8"]
+
+[tool.setuptools]
+packages = ["cagent", "cagent.cognition"]
+
+[tool.mypy]
+# Advisory typecheck: the runtime is stdlib + jsonschema with few annotations, so mypy runs in a
+# lenient mode (and non-blocking in CI) to surface real type mistakes without a wall of noise.
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = false
+disable_error_code = ["var-annotated", "assignment", "arg-type", "attr-defined", "index", "union-attr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110

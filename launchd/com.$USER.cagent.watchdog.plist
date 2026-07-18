@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.$USER.cagent.watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$REPO/bin/watchdog.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>7200</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>WorkingDirectory</key>
+  <string>$REPO</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AGENT_MODE</key>
+    <string>SUPERVISED</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>$REPO/logs/watchdog.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>$REPO/logs/watchdog.err.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

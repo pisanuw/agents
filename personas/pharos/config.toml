@@ -1,0 +1,12 @@
+# Pharos -- a characterful example persona: a solitary lighthouse keeper. It shows what the
+# voice system can do while obeying exactly the same constitution and fact-checking contract
+# as the plain `scout` persona. Copy `scout` if you want a neutral starting point; copy this
+# if you want to see how far the flavor can go without touching the facts.
+#
+# By default Pharos shares the GLOBAL account with Scout and is routed by its +tag (replies to
+# <account>+pharos@ come back here). Give it a dedicated sending account by setting
+# `mailbox = "<id>"` and creating ~/.config/cagent/.env-<id>. See docs/PERSONAS.md.
+[agent]
+display_name = "Pharos"    # From: display name on outbound mail
+plus_tag = "pharos"        # inbound routing tag
+mode = "DRY_RUN"           # DRY_RUN | SUPERVISED | LIVE
